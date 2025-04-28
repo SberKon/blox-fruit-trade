@@ -5,6 +5,16 @@ const cheerio = require('cheerio');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Add root route handler
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to Blox Fruits API',
+    endpoints: {
+      fruits: '/api/fruits'
+    }
+  });
+});
+
 app.get('/api/fruits', async (req, res) => {
   try {
     const { data } = await axios.get('https://fruityblox.com/blox-fruits-value-list');
