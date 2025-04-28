@@ -18,15 +18,32 @@ app.get("/api/bloxfruits", async (req, res) => {
     });
     
     const $ = cheerio.load(response.data);
-    const fruitsList = [];
+    const items = [];
 
-    $('.mb-4 > div.space-y-2').each((i, element) => {
-      const fruitInfo = $(element).text().trim();
-      fruitsList.push(fruitInfo);
+    $('.p-4.border').each((i, element) => {
+      const $el = $(element);
+      const name = $el.find('.font-bold.uppercase').text().trim();
+      const type = $el.find('.text-xs.text-gray-400').text().trim();
+      const values = $el.find('.text-sm').map((_, el) => $(el).text().trim()).get();
+      
+      if (type === 'fruit') {
+        items.push({
+          name,
+          type: 'Fruit',
+          valueCost: values[0],
+          permValueCost: values[1]
+        });
+      } else {
+        items.push({
+          name,
+          type: type.charAt(0).toUpperCase() + type.slice(1),
+          valueCost: values[0]
+        });
+      }
     });
 
     res.json({
-      fruits: fruitsList,
+      items,
       timestamp: new Date().toISOString(),
       source: "FruityBlox"
     });
