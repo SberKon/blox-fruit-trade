@@ -1,0 +1,564 @@
+body {
+    background-color: #0a0a0a;
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.trade-container {
+    width: 1200px;
+    padding: 40px;
+    background: #151515;
+    border-radius: 15px;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
+}
+
+.trade-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 60px; /* Increased gap for better spacing */
+}
+
+.slot-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 15px;
+}
+
+/* Base slot styles */
+.slot, .inventory-slot {
+    background-color: #1a1a1a;
+    position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden; /* Add this to prevent overflow */
+}
+
+/* Trade slots (верхні) */
+.slot {
+    width: 144px;
+    height: 144px;
+    border-radius: 13px;
+    transition: all 0.3s ease;
+}
+
+/* Inventory slots (нижні) */
+.inventory-slot {
+    width: 85px;
+    height: 85px;
+    border-radius: 13px;
+}
+
+/* Adjust items in trade slots */
+.slot .item {
+    width: 144px;
+    height: 144px;
+}
+
+.slot:hover, .inventory-slot:hover {
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+/* Adjust items in inventory slots */
+.inventory-slot .item {
+    width: 85px;
+    height: 85px;
+}
+
+/* Update border radius for all item elements in both slots */
+.slot .item-gradient,
+.slot .item-overlay,
+.slot .item img {
+    border-radius: 13px;
+}
+
+.inventory-slot .item-gradient,
+.inventory-slot .item-overlay,
+.inventory-slot .item img {
+    border-radius: 13px;
+}
+
+/* Adjust overlay borders for both types */
+.slot .item-overlay {
+    border-width: 7px !important;
+}
+
+.inventory-slot .item-overlay {
+    border-width: 5px !important;
+}
+
+/* Update empty slot hover styles */
+.slot:empty:not(.locked):hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    outline: 2px solid #00ffff;
+    outline-offset: -2px;
+    border-color: transparent;
+}
+
+/* Plus sign base styles */
+.slot:empty::after {
+    content: '+';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    color: #2a2a2a;
+    font-size: 30px;
+    opacity: 0.5;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+/* Hover effects */
+.slot:empty:not(.locked):hover::after {
+    color: #00ffff;
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Locked slot styles */
+.slot.locked {
+    position: relative;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+    animation: lockedGlow 2s infinite;
+    outline: 2px solid #ff3333;
+    outline-offset: -2px;
+}
+
+/* Animation for locked state */
+.slot.locked:empty::after {
+    transform: translate(-50%, -50%) rotate(45deg);
+    color: #ff3333;
+    opacity: 0.7;
+    font-size: 35px;
+}
+
+/* Hover effect on locked slot */
+.slot.locked:empty:hover::after {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.1);
+    opacity: 0.9;
+}
+
+/* Remove old locked X mark styles */
+.slot.locked:empty::before,
+.slot.locked::before {
+    display: none;
+}
+
+.slot.locked:hover {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+}
+
+.trade-icon {
+    width: 170px;
+    height: 170px;
+    background: none;
+    margin: 0 20px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.trade-icon img {
+    width: 165px;
+    height: 165px;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+}
+
+.trade-icon:hover img {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
+}
+
+.value-display {
+    text-align: center;
+    color: #00ffff;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 20px 0;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    min-width: 150px;
+}
+
+.inventory {
+    display: grid;
+    grid-template-columns: repeat(11, 85px); /* Fixed width slots */
+    grid-template-rows: repeat(4, 85px);     /* Fixed height slots */
+    gap: 10px;
+    margin-top: 60px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.inventory-slot .item {
+    width: 85px;
+    height: 85px;
+    margin: 0;
+    transform-origin: center;
+    position: relative;
+}
+
+/* Adjust item name for smaller inventory items */
+.inventory-slot .item-name {
+    width: calc(100% - 6px); /* Smaller padding for inventory items */
+    min-height: 20px;
+    max-height: 37px;
+    padding: 3px;
+    left: 3px;
+    bottom: 3px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* Ensure borders and gradients scale properly */
+.inventory-slot .item-gradient,
+.inventory-slot .item-overlay,
+.inventory-slot .item img {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px; /* Slightly reduced for better proportion */
+}
+
+.item {
+    width: 130px;
+    height: 130px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    overflow: hidden; /* Add this to prevent overflow */
+}
+
+/* Base gradient layer */
+.item-gradient {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 13px;
+    z-index: 1;
+}
+
+/* Image layer */
+.item img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: inherit;
+    z-index: 2;
+    object-fit: contain;
+    padding: 0;
+    transform: scale(1);
+    pointer-events: none;
+}
+
+/* Overlay layer */
+.item-overlay {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 13px;
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(354deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Border layer */
+.item-border {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 13px;
+    z-index: 4;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/* Custom image scaling based on data attribute */
+.item[data-img-scale] img {
+    transform: scale(calc(var(--scale-multiplier, 1) * 0.01));
+    transform-origin: center;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Reset old scaling classes */
+.item[data-img-scale="large"] img,
+.item[data-img-scale="medium"] img,
+.item[data-img-scale="small"] img,
+.inventory-slot .item[data-img-scale="large"] img,
+.inventory-slot .item[data-img-scale="medium"] img,
+.inventory-slot .item[data-img-scale="small"] img {
+    transform: none;
+}
+
+/* Update rarity styles */
+.item[data-rarity="Mythical"] .item-gradient {
+    background: linear-gradient(180deg, #B02628 0%, #E01A1C 100%);
+}
+
+.item[data-rarity="Mythical"] .item-overlay {
+    background: linear-gradient(354deg, rgba(255, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Mythical"] .item-border {
+    border: 5px solid #FF494C;
+}
+
+.item[data-rarity="Legendary"] .item-gradient {
+    background: linear-gradient(180deg, #951096 0%, #B820B7 100%);
+}
+
+.item[data-rarity="Legendary"] .item-overlay {
+    background: linear-gradient(354deg, rgba(242.60, 87.04, 255, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Legendary"] .item-border {
+    border: 5px solid #EF63F8;
+}
+
+.item[data-rarity="Rare"] .item-gradient {
+    background: linear-gradient(180deg, #481A9B 0%, #6941BA 100%);
+}
+
+.item[data-rarity="Rare"] .item-overlay {
+    background: linear-gradient(354deg, rgba(138, 90, 251, 0.35) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Rare"] .item-border {
+    border: 5px solid #8A5AFB;
+}
+
+.item[data-rarity="Uncommon"] .item-gradient {
+    background: linear-gradient(180deg, #18698B 0%, #3199BA 100%);
+}
+
+.item[data-rarity="Uncommon"] .item-overlay {
+    background: linear-gradient(354deg, rgba(81, 197, 222, 0.35) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Uncommon"] .item-border {
+    border: 5px solid #50C6DE;
+}
+
+.item[data-rarity="Common"] .item-gradient {
+    background: linear-gradient(180deg, #636363 0%, #848484 100%);
+}
+
+.item[data-rarity="Common"] .item-overlay {
+    background: linear-gradient(354deg, rgba(179, 179, 179, 0.35) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Common"] .item-border {
+    border: 5px solid #B2B2B2;
+}
+
+.item[data-rarity="Special"] .item-gradient {
+    background: linear-gradient(180deg, #267340 0%, #00C341 100%);
+}
+
+.item[data-rarity="Special"] .item-overlay {
+    background: linear-gradient(354deg, rgba(0, 237, 79, 0.35) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.item[data-rarity="Special"] .item-border {
+    border: 5px solid #00ED4F;
+}
+
+/* Adjust border widths for different slots */
+.slot .item-border {
+    border-width: 7px !important;
+}
+
+.inventory-slot .item-border {
+    border-width: 5px !important;
+}
+
+/* Remove old border styles */
+.item-overlay {
+    border: none;
+}
+
+.item-name {
+    width: calc(100% - 10px); /* Subtract padding from width */
+    min-height: 29px;
+    height: auto;
+    max-height: 55px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: absolute;
+    left: 5px; /* Add left offset to match padding */
+    bottom: 5px; /* Add bottom offset to match padding */
+    background: rgba(0, 0, 0, 0.40);
+    color: white;
+    font-size: 22px;
+    font-family: 'Londrina Solid', sans-serif;
+    font-weight: 400;
+    z-index: 3;
+    border-bottom-left-radius: 13px;
+    border-bottom-right-radius: 13px;
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(5px);
+    color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 1000;
+    pointer-events: none;
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    min-width: 200px;
+}
+
+.tooltip-row {
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.tooltip-label {
+    color: #00ffff;
+    margin-right: 10px;
+}
+
+.tooltip-label img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.item.removing {
+    animation: remove 0.2s ease-out forwards;
+}
+
+@keyframes appear {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes remove {
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes lockedGlow {
+    0% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.3); }
+    100% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.2); }
+}
+
+@keyframes addItem {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.slot .item.adding {
+    animation: addItem 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Add settings styles */
+.settings-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #2a2a2a;
+    border: 2px solid #3a3a3a;
+    border-radius: 8px;
+    color: #00ffff;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+    background: #3a3a3a;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.settings-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #151515;
+    border: 2px solid #00ffff;
+    border-radius: 15px;
+    padding: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+}
+
+.settings-modal.active {
+    display: block;
+}
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    background: #1a1a1a;
+}
+
+.settings-option label {
+    margin-right: 10px;
+}
+
+/* Hide item names when disabled */
+.hide-names .item-name {
+    display: none;
+}
+
+.currency-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: top;
+    margin-right: 4px;
+}
