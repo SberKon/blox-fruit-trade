@@ -26,6 +26,9 @@ app.get("/api/bloxfruits", async (req, res) => {
       const type = $el.find('.text-xs.text-gray-400').text().trim();
       const values = $el.find('.text-sm').map((_, el) => $(el).text().trim()).get();
       
+      // Skip empty entries and header text
+      if (!name || !type) return;
+      
       if (type === 'fruit') {
         items.push({
           name,
@@ -43,7 +46,7 @@ app.get("/api/bloxfruits", async (req, res) => {
     });
 
     res.json({
-      items,
+      items: items.filter(item => item.name && item.type), // Additional filter for safety
       timestamp: new Date().toISOString(),
       source: "FruityBlox"
     });
