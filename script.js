@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function createItemClone(originalItem) {
         const clone = originalItem.cloneNode(true);
         clone.style.opacity = '1'; // Ensure visibility
+        
+        // Preserve permanent status when cloning
+        if (originalItem.classList.contains('permanent')) {
+            clone.classList.add('permanent');
+        }
+        
         return clone;
     }
 
@@ -224,25 +230,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
         
-        const type = item.dataset.type;
+        let type = item.dataset.type;
         const rarity = item.dataset.rarity;
         const name = item.querySelector('.item-name').textContent;
-        const showName = !container.classList.contains('hide-names');
+        const showName = !document.querySelector('.trade-container').classList.contains('hide-names');
+        const isPermanent = item.classList.contains('permanent');
+        const isInventoryItem = item.closest('.inventory-slot') !== null;
+        const isPermanentMode = document.body.classList.contains('show-permanent');
+
+        // Modify type display for Permanent Fruits
+        if (type === 'Fruit' && (isPermanent || (isPermanentMode && isInventoryItem))) {
+            type = 'Permanent Fruit';
+        }
 
         let priceHtml = '';
         if (type === 'Fruit') {
+            // Regular Fruit shows only Money
             const price = parseInt(item.dataset.price).toLocaleString();
-            const robux = parseInt(item.dataset.robux).toLocaleString();
             priceHtml = `
                 <div class="tooltip-row">
                     <span class="tooltip-label">Money:</span>
                     <span><img src="svg/money-icon.svg" alt="$" class="currency-icon">${price}</span>
-                </div>
+                </div>`;
+        } else if (type === 'Permanent Fruit') {
+            // Permanent Fruit shows only Robux
+            const robux = parseInt(item.dataset.robux).toLocaleString();
+            priceHtml = `
                 <div class="tooltip-row">
                     <span class="tooltip-label">Robux:</span>
                     <span><img src="svg/robux-icon.svg" alt="R$" class="currency-icon">${robux}</span>
                 </div>`;
         } else if (type === 'Game Pass' || type === 'Game Pass(Product)') {
+            // Game passes always show only Robux
             const robux = parseInt(item.dataset.robux).toLocaleString();
             priceHtml = `
                 <div class="tooltip-row">
@@ -251,9 +270,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>`;
         }
 
-        // Беремо колір з border-color елемента item-border
-        const itemBorder = item.querySelector('.item-border');
-        const rarityColor = window.getComputedStyle(itemBorder).borderColor;
+        // Get rarity color based on actual rarity
+        const rarityColors = {
+            'Mythical': '#FF494C',
+            'Legendary': '#EF63F8',
+            'Rare': '#8A5AFB',
+            'Uncommon': '#50C6DE',
+            'Common': '#B2B2B2',
+            'Special': '#00ED4F'
+        };
+        const rarityColor = rarityColors[rarity];
 
         tooltip.innerHTML = `
             ${showName ? `<div class="tooltip-row">
@@ -262,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>` : ''}
             <div class="tooltip-row">
                 <span class="tooltip-label">Type:</span>
-                <span>${type}</span>
+                <span${type === 'Permanent Fruit' ? ' style="color: #FFD700"' : ''}>${type}</span>
             </div>
             <div class="tooltip-row">
                 <span class="tooltip-label">Rarity:</span>
@@ -358,6 +384,36 @@ document.addEventListener('DOMContentLoaded', function() {
             item.style.setProperty('--scale-multiplier', scale);
         }
     }
+
+    // Modify updateTooltip function to handle permanent mode
+    function updateTooltip(item) {
+        if (document.body.classList.contains('show-permanent') && item.dataset.type === "Fruit") {
+            // Show only Robux for Permanent Fruits
+            const tooltipContent = `
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Robux:</span>
+                    <span>${item.dataset.robux}R$</span>
+                </div>
+            `;
+        }
+    }
+
+    // Add permanent fruit toggle functionality
+    const togglePermanent = document.getElementById('togglePermanent');
+    togglePermanent.addEventListener('change', function() {
+        document.body.classList.toggle('show-permanent', this.checked);
+        
+        // Update tooltips only for inventory fruits
+        const inventoryFruits = document.querySelectorAll('.inventory-slot .item[data-type="Fruit"]');
+        inventoryFruits.forEach(item => {
+            if (this.checked) {
+                item.classList.add('permanent');
+            } else {
+                item.classList.remove('permanent');
+            }
+            updateTooltip(item);
+        });
+    });
 
     // Settings functionality
     const settingsBtn = document.querySelector('.settings-btn');

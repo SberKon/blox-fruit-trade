@@ -195,12 +195,38 @@ body {
     min-width: 150px;
 }
 
+.permanent-toggle {
+    background: rgba(26, 26, 26, 0.9);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    font-size: 16px;
+    margin-bottom: 15px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: 85px;
+}
+
+.permanent-toggle label {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.permanent-toggle input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
 .inventory {
     display: grid;
     grid-template-columns: repeat(11, 85px); /* Fixed width slots */
     grid-template-rows: repeat(4, 85px);     /* Fixed height slots */
     gap: 10px;
-    margin-top: 60px;
     padding: 15px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 15px;
@@ -390,6 +416,19 @@ body {
     border: 5px solid #00ED4F;
 }
 
+/* Apply permanent fruit styles for both inventory and trade slots */
+.item.permanent .item-gradient {
+    background: linear-gradient(180deg, #B8860B 0%, #FFD700 100%) !important;
+}
+
+.item.permanent .item-overlay {
+    background: linear-gradient(354deg, rgba(255, 215, 0, 0.35) 0%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
+.item.permanent .item-border {
+    border-color: #FFD700 !important;
+}
+
 /* Adjust border widths for different slots */
 .slot .item-border {
     border-width: 7px !important;
@@ -426,6 +465,44 @@ body {
     border-bottom-left-radius: 13px;
     border-bottom-right-radius: 13px;
     box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* Add bookmark styles */
+.book-mark {
+    position: absolute;
+    width: 28px;          /* Increased from 22px */
+    height: 28px;         /* Increased from 22px */
+    right: 5px;
+    top: 5px;
+    background: #d10000;
+    border-radius: 4px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Londrina Solid', sans-serif;
+    font-size: 20px;      /* Increased from 16px */
+    color: #FFFFFF;       /* Changed from #FFD700 to white */
+}
+
+.book-mark::after {
+    content: 'P';
+}
+
+/* Scale bookmark for trade slots */
+.slot .book-mark {
+    width: 35px;          /* Increased from 30px */
+    height: 35px;         /* Increased from 30px */
+    font-size: 26px;      /* Increased from 22px */
+}
+
+/* Show bookmark only for permanent items */
+.book-mark {
+    display: none;
+}
+
+.item.permanent .book-mark {
+    display: flex;
 }
 
 .tooltip {
