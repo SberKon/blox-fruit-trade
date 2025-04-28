@@ -9,7 +9,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/api/fruits", async (req, res) => {
+app.get("/api/bloxfruits", async (req, res) => {
   try {
     const response = await axios.get("https://fruityblox.com/blox-fruits-value-list", {
       headers: {
