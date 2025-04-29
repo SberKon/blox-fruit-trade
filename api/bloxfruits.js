@@ -1,3 +1,4 @@
+// Vercell Api
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
@@ -11,7 +12,7 @@ app.use((req, res, next) => {
 
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const response = await axios.get("https://fruityblox.com/blox-fruits-value-list", {
+    const response = await axios.get("https://bloxfruitsvalues.com/legendary", {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
@@ -20,35 +21,45 @@ app.get("/api/bloxfruits", async (req, res) => {
     const $ = cheerio.load(response.data);
     const items = [];
 
-    $('.p-4.border').each((i, element) => {
+    $('.flex.flex-col.w-\\[334px\\]').each((i, element) => {
       const $el = $(element);
-      const name = $el.find('.font-bold.uppercase').text().trim();
-      const type = $el.find('.text-xs.text-gray-400').text().trim();
-      const values = $el.find('.text-sm').map((_, el) => $(el).text().trim()).get();
       
-      // Skip empty entries and header text
-      if (!name || !type) return;
+      // Get fruit name
+      const name = $el.find('h1.text-2xl.font-semibold.mt-1').text().trim();
       
-      if (type === 'fruit') {
-        items.push({
-          name,
-          type: 'Fruit',
-          valueCost: values[0],
-          permValueCost: values[1]
-        });
-      } else {
-        items.push({
-          name,
-          type: type.charAt(0).toUpperCase() + type.slice(1),
-          valueCost: values[0]
-        });
-      }
+      // Get rarity
+      const rarity = $el.find('p.text-xs.font-semibold.text-white\\/40').text().trim();
+      
+      // Get stability status
+      const statusText = $el.find('.relative.items-center h1.text-sm.font-medium').text().trim();
+      const statusColor = $el.find('.relative.items-center h1.text-sm.font-medium').css('color');
+      
+      // Get value and demand
+      const valueText = $el.find('.text-2xl.contents').first().text().trim().replace(/,/g, '');
+      const demandText = $el.find('.text-2xl.contents').last().text().trim();
+      
+      const value = parseInt(valueText, 10);
+      const demand = parseInt(demandText.split('/')[0], 10);
+
+      // Create item object
+      const item = {
+        name,
+        rarity,
+        status: statusText,
+        physicalValue: value,
+        physicalDemand: demand,
+        permanentValue: null,  // Will be populated when available
+        permanentDemand: null, // Will be populated when available
+        imageUrl: $el.find('img').attr('src')
+      };
+
+      items.push(item);
     });
 
     res.json({
-      items: items.filter(item => item.name && item.type), // Additional filter for safety
+      items: items.filter(item => item.name && item.rarity),
       timestamp: new Date().toISOString(),
-      source: "FruityBlox"
+      source: "BloxFruitsValues"
     });
     
   } catch (error) {
