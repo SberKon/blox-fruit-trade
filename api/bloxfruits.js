@@ -1,6 +1,7 @@
 // Vercell Api
 const express = require("express");
-const puppeteer = require("puppeteer");
+const chrome = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 const app = express();
 
 app.use((req, res, next) => {
@@ -11,7 +12,18 @@ app.use((req, res, next) => {
 
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const executablePath = await chrome.executablePath;
+
+    const browser = await puppeteer.launch({
+      args: chrome.args,
+      executablePath: executablePath,
+      headless: chrome.headless,
+      defaultViewport: {
+        width: 1920,
+        height: 1080
+      }
+    });
+
     const page = await browser.newPage();
     await page.goto("https://bloxfruitsvalues.com/legendary", {
       waitUntil: "networkidle0"
