@@ -1,7 +1,7 @@
 // Vercell Api
 const express = require("express");
-const chrome = require('chrome-aws-lambda');
 const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const app = express();
 
 app.use((req, res, next) => {
@@ -12,16 +12,12 @@ app.use((req, res, next) => {
 
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const executablePath = await chrome.executablePath;
-
     const browser = await puppeteer.launch({
-      args: chrome.args,
-      executablePath: executablePath,
-      headless: chrome.headless,
-      defaultViewport: {
-        width: 1920,
-        height: 1080
-      }
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
