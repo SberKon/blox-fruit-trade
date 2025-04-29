@@ -1,7 +1,6 @@
 // Vercell Api
 const express = require("express");
-const axios = require("axios");
-const cheerio = require("cheerio");
+const puppeteer = require("puppeteer");
 const app = express();
 
 app.use((req, res, next) => {
@@ -12,63 +11,92 @@ app.use((req, res, next) => {
 
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const response = await axios.get("https://bloxfruitsvalues.com/legendary", {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.goto("https://bloxfruitsvalues.com/legendary", {
+      waitUntil: "networkidle0"
     });
-    
-    const $ = cheerio.load(response.data);
-    const items = new Map(); // Use map to combine physical and permanent values
 
-    $('.flex.flex-col.w-\\[334px\\]').each((i, element) => {
-      const $el = $(element);
-      
-      const name = $el.find('h1.text-2xl.font-semibold.mt-1').text().trim();
-      const rarity = $el.find('p.text-xs.font-semibold.text-white\\/40').text().trim();
-      const status = $el.find('.relative.items-center h1.text-sm.font-medium').text().trim();
-      
-      // Values and demand
-      const valueText = $el.find('.text-2xl.contents').first().text().trim();
-      const demandText = $el.find('.text-2xl.contents').last().text().trim();
-      
-      const value = parseInt(valueText.replace(/,/g, ''), 10) || 0;
-      const demand = parseInt(demandText.split('/')[0], 10) || 0;
-      
-      // Image URL
-      const imageUrl = $el.find('img').attr('src').split('?')[0];
+    const items = new Map();
 
-      // Check if we already have this fruit
-      if (!items.has(name)) {
-        items.set(name, {
+    // Get physical values first
+    const physicalData = await page.evaluate(() => {
+      const fruits = [];
+      document.querySelectorAll('.flex.flex-col.w-\\[334px\\]').forEach(el => {
+        const name = el.querySelector('h1.text-2xl.font-semibold.mt-1').textContent.trim();
+        const rarity = el.querySelector('p.text-xs.font-semibold.text-white\\/40').textContent.trim();
+        const status = el.querySelector('.relative.items-center h1.text-sm.font-medium').textContent.trim();
+        const valueText = el.querySelector('.text-2xl.contents').textContent.trim();
+        const demandText = el.querySelectorAll('.text-2xl.contents')[1].textContent.trim();
+        const imageUrl = el.querySelector('img').getAttribute('src').split('?')[0];
+
+        fruits.push({
           name,
           rarity,
           status,
-          physicalValue: null,
-          physicalDemand: null,
-          permanentValue: null,
-          permanentDemand: null,
-          imageUrl: imageUrl || null
+          value: parseInt(valueText.replace(/,/g, ''), 10) || 0,
+          demand: parseInt(demandText.split('/')[0], 10) || 0,
+          imageUrl
         });
-      }
-
-      const item = items.get(name);
-
-      // Determine if this is physical or permanent based on value
-      if (value < item.permanentValue || !item.physicalValue) {
-        item.physicalValue = value;
-        item.physicalDemand = demand;
-      } else {
-        item.permanentValue = value;
-        item.permanentDemand = demand;
-      }
-
-      // Update the item in the map
-      items.set(name, item);
+      });
+      return fruits;
     });
 
+    // Click all select elements to "Permanent Value"
+    await page.evaluate(() => {
+      document.querySelectorAll('select').forEach(select => {
+        select.value = 'permanent';
+        select.dispatchEvent(new Event('change'));
+      });
+    });
+
+    // Wait for values to update
+    await page.waitForTimeout(1000);
+
+    // Get permanent values
+    const permanentData = await page.evaluate(() => {
+      const fruits = [];
+      document.querySelectorAll('.flex.flex-col.w-\\[334px\\]').forEach(el => {
+        const name = el.querySelector('h1.text-2xl.font-semibold.mt-1').textContent.trim();
+        const valueText = el.querySelector('.text-2xl.contents').textContent.trim();
+        const demandText = el.querySelectorAll('.text-2xl.contents')[1].textContent.trim();
+
+        fruits.push({
+          name,
+          value: parseInt(valueText.replace(/,/g, ''), 10) || 0,
+          demand: parseInt(demandText.split('/')[0], 10) || 0,
+        });
+      });
+      return fruits;
+    });
+
+    // Combine the data
+    physicalData.forEach(fruit => {
+      items.set(fruit.name, {
+        name: fruit.name,
+        rarity: fruit.rarity,
+        status: fruit.status,
+        physicalValue: fruit.value,
+        physicalDemand: fruit.demand,
+        permanentValue: null,
+        permanentDemand: null,
+        imageUrl: fruit.imageUrl
+      });
+    });
+
+    permanentData.forEach(fruit => {
+      const item = items.get(fruit.name);
+      if (item) {
+        item.permanentValue = fruit.value;
+        item.permanentDemand = fruit.demand;
+        items.set(fruit.name, item);
+      }
+    });
+
+    await browser.close();
+
     res.json({
-      items: Array.from(items.values()).filter(item => item.name && item.rarity),
+      items: Array.from(items.values()),
       timestamp: new Date().toISOString(),
       source: "BloxFruitsValues"
     });
