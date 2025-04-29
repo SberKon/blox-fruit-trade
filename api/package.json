@@ -10,10 +10,7 @@
     "express": "^4.18.2",
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
-    "whatwg-mimetype": "^3.0.0",
-    "puppeteer-core": "10.1.0",
-    "chrome-aws-lambda": "10.1.0",
-    "@sparticuz/chromium": "^109.0.5"
+    "puppeteer": "^21.3.8"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

@@ -1,7 +1,6 @@
 // Vercell Api
 const express = require("express");
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer');
 const app = express();
 
 app.use((req, res, next) => {
@@ -11,18 +10,26 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/bloxfruits", async (req, res) => {
+  let browser;
   try {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-      ignoreHTTPSErrors: true,
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu'
+      ]
     });
 
     const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Navigate and wait for initial load
     await page.goto("https://bloxfruitsvalues.com/legendary", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
+      timeout: 30000
     });
 
     const items = new Map();
@@ -101,8 +108,6 @@ app.get("/api/bloxfruits", async (req, res) => {
       }
     });
 
-    await browser.close();
-
     res.json({
       items: Array.from(items.values()),
       timestamp: new Date().toISOString(),
@@ -112,6 +117,14 @@ app.get("/api/bloxfruits", async (req, res) => {
   } catch (error) {
     console.error('Blox Fruits API Error:', error.message);
     res.status(500).json({ error: "Failed to fetch Blox Fruits data" });
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (error) {
+        console.error('Browser close error:', error);
+      }
+    }
   }
 });
 
