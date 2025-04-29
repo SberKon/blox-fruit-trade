@@ -24,32 +24,33 @@ app.get("/api/bloxfruits", async (req, res) => {
     $('.flex.flex-col.w-\\[334px\\]').each((i, element) => {
       const $el = $(element);
       
+      // Basic info
       const name = $el.find('h1.text-2xl.font-semibold.mt-1').text().trim();
       const rarity = $el.find('p.text-xs.font-semibold.text-white\\/40').text().trim();
       
-      // Get status with color
-      const statusEl = $el.find('.relative.items-center h1.text-sm.font-medium');
-      const status = statusEl.text().trim();
+      // Status (Stable/Unstable/Overpaid/Underpaid)
+      const status = $el.find('.relative.items-center h1.text-sm.font-medium').text().trim();
       
-      // Get values from the display
-      const values = $el.find('.text-2xl.contents').map((_, el) => $(el).text().trim()).get();
-      const valueText = values[0].replace(/,/g, '');
-      const demandText = values[1];
+      // Physical values
+      const valueText = $el.find('.text-2xl.contents').first().text().trim();
+      const demandText = $el.find('.text-2xl.contents').last().text().trim();
       
-      // Get image URL
-      const imageEl = $el.find('img');
-      const imageSrc = imageEl.attr('src');
-      const imageUrl = imageSrc.includes('?') ? imageSrc.split('?')[0] : imageSrc;
+      // Clean up values
+      const physicalValue = parseInt(valueText.replace(/,/g, ''), 10) || 0;
+      const physicalDemand = parseInt(demandText.split('/')[0], 10) || 0;
       
+      // Image URL - keep just the path part
+      const imageUrl = $el.find('img').attr('src').split('?')[0];
+
       const item = {
         name,
         rarity,
         status,
-        physicalValue: parseInt(valueText, 10),
-        physicalDemand: parseInt(demandText.split('/')[0], 10),
-        permanentValue: null,
-        permanentDemand: null,
-        imageUrl
+        physicalValue,
+        physicalDemand,
+        permanentValue: null,  // Will be populated when permanent values are available
+        permanentDemand: null, // Will be populated when permanent values are available
+        imageUrl: imageUrl || null
       };
 
       items.push(item);
