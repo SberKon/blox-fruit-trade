@@ -19,45 +19,56 @@ app.get("/api/bloxfruits", async (req, res) => {
     });
     
     const $ = cheerio.load(response.data);
-    const items = [];
+    const items = new Map(); // Use map to combine physical and permanent values
 
     $('.flex.flex-col.w-\\[334px\\]').each((i, element) => {
       const $el = $(element);
       
-      // Basic info
       const name = $el.find('h1.text-2xl.font-semibold.mt-1').text().trim();
       const rarity = $el.find('p.text-xs.font-semibold.text-white\\/40').text().trim();
-      
-      // Status (Stable/Unstable/Overpaid/Underpaid)
       const status = $el.find('.relative.items-center h1.text-sm.font-medium').text().trim();
       
-      // Physical values
+      // Values and demand
       const valueText = $el.find('.text-2xl.contents').first().text().trim();
       const demandText = $el.find('.text-2xl.contents').last().text().trim();
       
-      // Clean up values
-      const physicalValue = parseInt(valueText.replace(/,/g, ''), 10) || 0;
-      const physicalDemand = parseInt(demandText.split('/')[0], 10) || 0;
+      const value = parseInt(valueText.replace(/,/g, ''), 10) || 0;
+      const demand = parseInt(demandText.split('/')[0], 10) || 0;
       
-      // Image URL - keep just the path part
+      // Image URL
       const imageUrl = $el.find('img').attr('src').split('?')[0];
 
-      const item = {
-        name,
-        rarity,
-        status,
-        physicalValue,
-        physicalDemand,
-        permanentValue: null,  // Will be populated when permanent values are available
-        permanentDemand: null, // Will be populated when permanent values are available
-        imageUrl: imageUrl || null
-      };
+      // Check if we already have this fruit
+      if (!items.has(name)) {
+        items.set(name, {
+          name,
+          rarity,
+          status,
+          physicalValue: null,
+          physicalDemand: null,
+          permanentValue: null,
+          permanentDemand: null,
+          imageUrl: imageUrl || null
+        });
+      }
 
-      items.push(item);
+      const item = items.get(name);
+
+      // Determine if this is physical or permanent based on value
+      if (value < item.permanentValue || !item.physicalValue) {
+        item.physicalValue = value;
+        item.physicalDemand = demand;
+      } else {
+        item.permanentValue = value;
+        item.permanentDemand = demand;
+      }
+
+      // Update the item in the map
+      items.set(name, item);
     });
 
     res.json({
-      items: items.filter(item => item.name && item.rarity),
+      items: Array.from(items.values()).filter(item => item.name && item.rarity),
       timestamp: new Date().toISOString(),
       source: "BloxFruitsValues"
     });
