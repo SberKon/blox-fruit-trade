@@ -24,33 +24,32 @@ app.get("/api/bloxfruits", async (req, res) => {
     $('.flex.flex-col.w-\\[334px\\]').each((i, element) => {
       const $el = $(element);
       
-      // Get fruit name
       const name = $el.find('h1.text-2xl.font-semibold.mt-1').text().trim();
-      
-      // Get rarity
       const rarity = $el.find('p.text-xs.font-semibold.text-white\\/40').text().trim();
       
-      // Get stability status
-      const statusText = $el.find('.relative.items-center h1.text-sm.font-medium').text().trim();
-      const statusColor = $el.find('.relative.items-center h1.text-sm.font-medium').css('color');
+      // Get status with color
+      const statusEl = $el.find('.relative.items-center h1.text-sm.font-medium');
+      const status = statusEl.text().trim();
       
-      // Get value and demand
-      const valueText = $el.find('.text-2xl.contents').first().text().trim().replace(/,/g, '');
-      const demandText = $el.find('.text-2xl.contents').last().text().trim();
+      // Get values from the display
+      const values = $el.find('.text-2xl.contents').map((_, el) => $(el).text().trim()).get();
+      const valueText = values[0].replace(/,/g, '');
+      const demandText = values[1];
       
-      const value = parseInt(valueText, 10);
-      const demand = parseInt(demandText.split('/')[0], 10);
-
-      // Create item object
+      // Get image URL
+      const imageEl = $el.find('img');
+      const imageSrc = imageEl.attr('src');
+      const imageUrl = imageSrc.includes('?') ? imageSrc.split('?')[0] : imageSrc;
+      
       const item = {
         name,
         rarity,
-        status: statusText,
-        physicalValue: value,
-        physicalDemand: demand,
-        permanentValue: null,  // Will be populated when available
-        permanentDemand: null, // Will be populated when available
-        imageUrl: $el.find('img').attr('src')
+        status,
+        physicalValue: parseInt(valueText, 10),
+        physicalDemand: parseInt(demandText.split('/')[0], 10),
+        permanentValue: null,
+        permanentDemand: null,
+        imageUrl
       };
 
       items.push(item);
