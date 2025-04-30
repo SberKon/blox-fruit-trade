@@ -1,6 +1,7 @@
 // Vercell Api
 const express = require("express");
-const puppeteer = require('puppeteer');
+const fs = require('fs').promises;
+const path = require('path');
 const app = express();
 
 app.use((req, res, next) => {
@@ -10,121 +11,15 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/bloxfruits", async (req, res) => {
-  let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
-      ]
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1920, height: 1080 });
+    const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
+    const jsonData = await fs.readFile(dataPath, 'utf-8');
+    const data = JSON.parse(jsonData);
     
-    // Navigate and wait for initial load
-    await page.goto("https://bloxfruitsvalues.com/legendary", {
-      waitUntil: "networkidle0",
-      timeout: 30000
-    });
-
-    const items = new Map();
-
-    // Get physical values first
-    const physicalData = await page.evaluate(() => {
-      const fruits = [];
-      document.querySelectorAll('.flex.flex-col.w-\\[334px\\]').forEach(el => {
-        const name = el.querySelector('h1.text-2xl.font-semibold.mt-1').textContent.trim();
-        const rarity = el.querySelector('p.text-xs.font-semibold.text-white\\/40').textContent.trim();
-        const status = el.querySelector('.relative.items-center h1.text-sm.font-medium').textContent.trim();
-        const valueText = el.querySelector('.text-2xl.contents').textContent.trim();
-        const demandText = el.querySelectorAll('.text-2xl.contents')[1].textContent.trim();
-        const imageUrl = el.querySelector('img').getAttribute('src').split('?')[0];
-
-        fruits.push({
-          name,
-          rarity,
-          status,
-          value: parseInt(valueText.replace(/,/g, ''), 10) || 0,
-          demand: parseInt(demandText.split('/')[0], 10) || 0,
-          imageUrl
-        });
-      });
-      return fruits;
-    });
-
-    // Click all select elements to "Permanent Value"
-    await page.evaluate(() => {
-      document.querySelectorAll('select').forEach(select => {
-        select.value = 'permanent';
-        select.dispatchEvent(new Event('change'));
-      });
-    });
-
-    // Wait for values to update
-    await page.waitForTimeout(1000);
-
-    // Get permanent values
-    const permanentData = await page.evaluate(() => {
-      const fruits = [];
-      document.querySelectorAll('.flex.flex-col.w-\\[334px\\]').forEach(el => {
-        const name = el.querySelector('h1.text-2xl.font-semibold.mt-1').textContent.trim();
-        const valueText = el.querySelector('.text-2xl.contents').textContent.trim();
-        const demandText = el.querySelectorAll('.text-2xl.contents')[1].textContent.trim();
-
-        fruits.push({
-          name,
-          value: parseInt(valueText.replace(/,/g, ''), 10) || 0,
-          demand: parseInt(demandText.split('/')[0], 10) || 0,
-        });
-      });
-      return fruits;
-    });
-
-    // Combine the data
-    physicalData.forEach(fruit => {
-      items.set(fruit.name, {
-        name: fruit.name,
-        rarity: fruit.rarity,
-        status: fruit.status,
-        physicalValue: fruit.value,
-        physicalDemand: fruit.demand,
-        permanentValue: null,
-        permanentDemand: null,
-        imageUrl: fruit.imageUrl
-      });
-    });
-
-    permanentData.forEach(fruit => {
-      const item = items.get(fruit.name);
-      if (item) {
-        item.permanentValue = fruit.value;
-        item.permanentDemand = fruit.demand;
-        items.set(fruit.name, item);
-      }
-    });
-
-    res.json({
-      items: Array.from(items.values()),
-      timestamp: new Date().toISOString(),
-      source: "BloxFruitsValues"
-    });
-    
+    res.json(data);
   } catch (error) {
     console.error('Blox Fruits API Error:', error.message);
     res.status(500).json({ error: "Failed to fetch Blox Fruits data" });
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (error) {
-        console.error('Browser close error:', error);
-      }
-    }
   }
 });
 
