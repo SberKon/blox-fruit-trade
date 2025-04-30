@@ -1,13 +1,41 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.chrome.options import Options
+import requests
+from bs4 import BeautifulSoup
 import json
 import time
 
-# ... (keep existing get_gamepass_data and get_fruit_data functions) ...
+def get_fruit_data(soup_card, is_gamepass=False):
+    data = {}
+    try:
+        name = soup_card.select_one("h1.text-2xl.font-semibold").text.strip()
+        data["name"] = name
+        
+        if is_gamepass:
+            status = soup_card.select_one("div.items-center h1").text.strip()
+            value = soup_card.select_one("div.text-sm.font-medium h2").text.strip()
+            demand = soup_card.select_one("h2#Demand").text.strip()
+            
+            data["values"] = {
+                "value": value.replace(",", ""),
+                "demand": demand,
+                "status": status
+            }
+        else:
+            values_div = soup_card.select("div.text-sm.font-medium")
+            status = soup_card.select_one("div.relative.items-center h1").text.strip()
+            
+            data["values"] = {
+                "physical": {
+                    "value": values_div[0].select_one("h2").text.strip().replace(",", ""),
+                    "demand": values_div[1].select_one("h2").text.strip(),
+                    "status": status
+                }
+            }
+            
+    except Exception as e:
+        print(f"Error processing card: {e}")
+        return None
+    
+    return data
 
 def scrape_fruits():
     urls = [
@@ -19,32 +47,31 @@ def scrape_fruits():
         "https://bloxfruitsvalues.com/gamepass"
     ]
     
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     
-    driver = webdriver.Chrome(options=chrome_options)
     all_fruits_data = []
     
-    try:
-        for url in urls:
-            driver.get(url)
+    for url in urls:
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            cards = soup.select("div.flex.flex-col.w-[334px]")
+            
             is_gamepass = "gamepass" in url
             
-            wait = WebDriverWait(driver, 10)
-            cards = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.flex.flex-col.w-\\[334px\\]")))
-            
             for card in cards:
-                try:
-                    fruit_data = get_fruit_data(driver, card, is_gamepass)
+                fruit_data = get_fruit_data(card, is_gamepass)
+                if fruit_data:
                     all_fruits_data.append(fruit_data)
-                except Exception as e:
-                    print(f"Error processing card from {url}: {e}")
             
             time.sleep(1)
-    finally:
-        driver.quit()
+            
+        except Exception as e:
+            print(f"Error processing URL {url}: {e}")
     
     return all_fruits_data
 
