@@ -10,10 +10,33 @@ app.use((req, res, next) => {
   next();
 });
 
+// Initialize data file if it doesn't exist
+async function initializeDataFile() {
+  const dataDir = path.join(__dirname, 'data');
+  const dataFile = path.join(dataDir, 'bloxfruits.json');
+  
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+    
+    const initialData = {
+      items: [],
+      timestamp: new Date().toISOString(),
+      source: "BloxFruitsValues",
+      total_items: 0
+    };
+
+    await fs.writeFile(dataFile, JSON.stringify(initialData, null, 2));
+    console.log('Data file initialized');
+  } catch (error) {
+    console.error('Error initializing data file:', error);
+  }
+}
+
 // Function to run scraper
 async function runScraper() {
   return new Promise((resolve, reject) => {
-    const python = spawn('python', ['scraper.py']);
+    const scraperPath = path.join(__dirname, 'scraper.py');
+    const python = spawn('python', [scraperPath]);
     
     python.stdout.on('data', (data) => {
       console.log('Scraper output:', data.toString());
@@ -35,14 +58,22 @@ async function runScraper() {
 // Get data with optional refresh
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const refresh = req.query.refresh === 'true';
+    const dataFile = path.join(__dirname, 'data', 'bloxfruits.json');
     
+    // Check if data file exists
+    try {
+      await fs.access(dataFile);
+    } catch {
+      await initializeDataFile();
+    }
+
+    const refresh = req.query.refresh === 'true';
     if (refresh) {
       console.log('Refreshing data...');
       await runScraper();
     }
 
-    const data = await fs.readFile('data/bloxfruits.json', 'utf-8');
+    const data = await fs.readFile(dataFile, 'utf-8');
     const jsonData = JSON.parse(data);
     
     // Apply filters if any
@@ -75,9 +106,12 @@ app.post("/api/bloxfruits/refresh", async (req, res) => {
   }
 });
 
+// Initialize data file on startup
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+initializeDataFile().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
 
 module.exports = app;
