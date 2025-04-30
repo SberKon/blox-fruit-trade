@@ -4,10 +4,6 @@
     {
       "src": "api/bloxfruits.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "templates/scraper.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -15,5 +11,10 @@
       "src": "/api/bloxfruits",
       "dest": "api/bloxfruits.js"
     }
-  ]
+  ],
+  "functions": {
+    "api/bloxfruits.js": {
+      "runtime": "@vercel/python@3.9"
+    }
+  }
 }
