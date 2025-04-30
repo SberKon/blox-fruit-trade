@@ -9,6 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import json
 import time
 from datetime import datetime
+import os
 
 def setup_driver():
     chrome_options = Options()
@@ -133,20 +134,40 @@ def scrape_all_data():
     return all_items
 
 def save_data(items):
-    data = {
-        "items": items,
-        "timestamp": datetime.now().isoformat(),
-        "source": "BloxFruitsValues",
-        "total_items": len(items)
-    }
-    
-    # Ensure the directory exists
-    import os
-    os.makedirs('api/data', exist_ok=True)
-    
-    with open('api/data/bloxfruits.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        data = {
+            "items": items,
+            "timestamp": datetime.now().isoformat(),
+            "source": "BloxFruitsValues",
+            "total_items": len(items)
+        }
+        
+        # Get absolute path to the data directory
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_dir = os.path.join(current_dir, 'api', 'data')
+        data_file = os.path.join(data_dir, 'bloxfruits.json')
+        
+        print(f"Saving data to: {data_file}")
+        print(f"Total items found: {len(items)}")
+        
+        # Create directory if it doesn't exist
+        os.makedirs(data_dir, exist_ok=True)
+        
+        with open(data_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            
+        print("Data saved successfully!")
+        
+    except Exception as e:
+        print(f"Error saving data: {e}")
+        raise
 
 if __name__ == "__main__":
-    items = scrape_all_data()
-    save_data(items)
+    print("Starting scraper...")
+    try:
+        items = scrape_all_data()
+        print(f"Scraping completed. Found {len(items)} items")
+        save_data(items)
+    except Exception as e:
+        print(f"Error in main execution: {e}")
+        raise
