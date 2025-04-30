@@ -16,10 +16,48 @@ app.get("/api/bloxfruits", async (req, res) => {
     const jsonData = await fs.readFile(dataPath, 'utf-8');
     const data = JSON.parse(jsonData);
     
+    const { rarity, type, value_type } = req.query;
+    
+    if (rarity || type || value_type) {
+      data.items = data.items.filter(item => {
+        let match = true;
+        if (rarity) {
+          match = match && item.rarity.toLowerCase() === rarity.toLowerCase();
+        }
+        if (type) {
+          match = match && item.type.toLowerCase() === type.toLowerCase();
+        }
+        if (value_type && item.values[value_type]) {
+          match = match && true; // Item has the requested value type
+        }
+        return match;
+      });
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Blox Fruits API Error:', error.message);
     res.status(500).json({ error: "Failed to fetch Blox Fruits data" });
+  }
+});
+
+// Get available filters
+app.get("/api/bloxfruits/filters", async (req, res) => {
+  try {
+    const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
+    const jsonData = await fs.readFile(dataPath, 'utf-8');
+    const data = JSON.parse(jsonData);
+    
+    const filters = {
+      rarities: [...new Set(data.items.map(item => item.rarity))],
+      types: [...new Set(data.items.map(item => item.type))],
+      value_types: ["physical", "permanent"]
+    };
+    
+    res.json(filters);
+  } catch (error) {
+    console.error('Error fetching filters:', error.message);
+    res.status(500).json({ error: "Failed to fetch filters" });
   }
 });
 
