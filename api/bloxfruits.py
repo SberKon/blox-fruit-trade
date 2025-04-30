@@ -57,7 +57,7 @@ def parse_card(card_div, is_gamepass=False):
             }
         }
 
-@app.get("/api/scrape", response_model=list[ScrapeResult])
+@app.get("/api/bloxfruits", response_model=list[ScrapeResult])
 def scrape_all():
     all_data = []
     for kind, url in BASE_URLS.items():
