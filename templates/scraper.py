@@ -6,13 +6,18 @@ import time
 def get_fruit_data(soup_card, is_gamepass=False):
     data = {}
     try:
-        name = soup_card.select_one("h1.text-2xl.font-semibold").text.strip()
+        # Using a more reliable selector for the name
+        name_elem = soup_card.find('h1', class_='text-2xl font-semibold')
+        if not name_elem:
+            return None
+        
+        name = name_elem.text.strip()
         data["name"] = name
         
         if is_gamepass:
-            status = soup_card.select_one("div.items-center h1").text.strip()
-            value = soup_card.select_one("div.text-sm.font-medium h2").text.strip()
-            demand = soup_card.select_one("h2#Demand").text.strip()
+            status = soup_card.find('div', class_='items-center').find('h1').text.strip()
+            value = soup_card.find('div', class_='text-sm font-medium').find('h2').text.strip()
+            demand = soup_card.find('h2', id='Demand').text.strip()
             
             data["values"] = {
                 "value": value.replace(",", ""),
@@ -20,16 +25,20 @@ def get_fruit_data(soup_card, is_gamepass=False):
                 "status": status
             }
         else:
-            values_div = soup_card.select("div.text-sm.font-medium")
-            status = soup_card.select_one("div.relative.items-center h1").text.strip()
+            values_divs = soup_card.find_all('div', class_='text-sm font-medium')
+            status = soup_card.find('div', class_='relative items-center').find('h1').text.strip()
             
-            data["values"] = {
-                "physical": {
-                    "value": values_div[0].select_one("h2").text.strip().replace(",", ""),
-                    "demand": values_div[1].select_one("h2").text.strip(),
-                    "status": status
+            if len(values_divs) >= 2:
+                value = values_divs[0].find('h2').text.strip()
+                demand = values_divs[1].find('h2').text.strip()
+                
+                data["values"] = {
+                    "physical": {
+                        "value": value.replace(",", ""),
+                        "demand": demand,
+                        "status": status
+                    }
                 }
-            }
             
     except Exception as e:
         print(f"Error processing card: {e}")
@@ -59,7 +68,8 @@ def scrape_fruits():
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
-            cards = soup.select("div.flex.flex-col.w-[334px]")
+            # Changed selector to use class_ parameter
+            cards = soup.find_all('div', class_=['flex', 'flex-col', 'w-[334px]'])
             
             is_gamepass = "gamepass" in url
             
