@@ -10,11 +10,27 @@ app.use((req, res, next) => {
   next();
 });
 
+const getInitialData = () => {
+  return {
+    items: [],
+    timestamp: new Date().toISOString(),
+    source: "BloxFruitsValues",
+    total_items: 0
+  };
+};
+
 app.get("/api/bloxfruits", async (req, res) => {
   try {
     const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
-    const jsonData = await fs.readFile(dataPath, 'utf-8');
-    const data = JSON.parse(jsonData);
+    let data;
+    
+    try {
+      const jsonData = await fs.readFile(dataPath, 'utf-8');
+      data = JSON.parse(jsonData);
+    } catch (err) {
+      console.warn('Data file not found, using initial data');
+      data = getInitialData();
+    }
     
     const { rarity, type, value_type } = req.query;
     
@@ -28,7 +44,7 @@ app.get("/api/bloxfruits", async (req, res) => {
           match = match && item.type.toLowerCase() === type.toLowerCase();
         }
         if (value_type && item.values[value_type]) {
-          match = match && true; // Item has the requested value type
+          match = match && true;
         }
         return match;
       });
@@ -36,7 +52,7 @@ app.get("/api/bloxfruits", async (req, res) => {
     
     res.json(data);
   } catch (error) {
-    console.error('Blox Fruits API Error:', error.message);
+    console.error('Blox Fruits API Error:', error);
     res.status(500).json({ error: "Failed to fetch Blox Fruits data" });
   }
 });
@@ -45,8 +61,15 @@ app.get("/api/bloxfruits", async (req, res) => {
 app.get("/api/bloxfruits/filters", async (req, res) => {
   try {
     const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
-    const jsonData = await fs.readFile(dataPath, 'utf-8');
-    const data = JSON.parse(jsonData);
+    let data;
+    
+    try {
+      const jsonData = await fs.readFile(dataPath, 'utf-8');
+      data = JSON.parse(jsonData);
+    } catch (err) {
+      console.warn('Data file not found, using initial data');
+      data = getInitialData();
+    }
     
     const filters = {
       rarities: [...new Set(data.items.map(item => item.rarity))],
