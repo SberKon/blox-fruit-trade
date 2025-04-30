@@ -1,7 +1,9 @@
 {
   "functions": {
     "api/scrape.py": {
-      "runtime": "python3.9"
+      // @vercel/python — офіційний “builder” для Python
+      // 0.5.2 — приклад стабільної версії. Ви можете перевірити останню на npm.
+      "runtime": "@vercel/python@0.5.2"
     }
   }
 }
