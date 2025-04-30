@@ -5,7 +5,8 @@ const path = require('path');
 async function runScraper() {
   return new Promise((resolve, reject) => {
     const pythonPath = path.join(process.cwd(), 'templates', 'scraper.py');
-    exec(`python ${pythonPath}`, (error, stdout, stderr) => {
+    // Use python3 instead of python
+    exec(`python3 ${pythonPath}`, { env: process.env }, (error, stdout, stderr) => {
       if (error) {
         console.error(`Scraper error: ${error}`);
         reject(error);

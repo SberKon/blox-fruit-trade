@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "vercel dev",
-    "deploy": "vercel deploy"
+    "deploy": "vercel deploy",
+    "build": "pip3 install -r templates/requirements.txt"
   },
   "dependencies": {
     "child_process": "^1.0.2"
