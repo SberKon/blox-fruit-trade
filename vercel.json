@@ -1,0 +1,21 @@
+{
+  "routes": [
+    {
+      "src": "/api/fruits",
+      "methods": ["GET"],
+      "dest": "/src/api/fruits.ts"
+    }
+  ],
+  "builds": [
+    {
+      "src": "src/api/fruits.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "functions": {
+    "api/fruits.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
