@@ -1,0 +1,18 @@
+{
+  "name": "bloxfruits-api",
+  "version": "1.0.0",
+  "main": "bloxfruits.js",
+  "scripts": {
+    "start": "node bloxfruits.js",
+    "dev": "nodemon bloxfruits.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.4.0",
+    "cheerio": "^1.0.0-rc.12",
+    "whatwg-mimetype": "^3.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
