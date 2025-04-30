@@ -1,10 +1,15 @@
-bloxfruits-api
-├── api
-│   └── index.py
-├── templates
-│   └── scraper.py
-├── data
-│   └── all_fruits.json
-├── requirements.txt
-├── vercel.json
-└── README.md
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "api/index.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "api/index.py"
+      }
+    ]
+  }
