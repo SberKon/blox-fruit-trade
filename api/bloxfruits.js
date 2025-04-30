@@ -1,5 +1,5 @@
-// Vercell Api
 const express = require("express");
+const { spawn } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const app = express();
@@ -10,77 +10,68 @@ app.use((req, res, next) => {
   next();
 });
 
-const getInitialData = () => {
-  return {
-    items: [],
-    timestamp: new Date().toISOString(),
-    source: "BloxFruitsValues",
-    total_items: 0
-  };
-};
+// Function to run scraper
+async function runScraper() {
+  return new Promise((resolve, reject) => {
+    const python = spawn('python', ['scraper.py']);
+    
+    python.stdout.on('data', (data) => {
+      console.log('Scraper output:', data.toString());
+    });
 
+    python.stderr.on('data', (data) => {
+      console.error('Scraper error:', data.toString());
+    });
+
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.warn(`Scraper process exited with code ${code}`);
+      }
+      resolve();
+    });
+  });
+}
+
+// Get data with optional refresh
 app.get("/api/bloxfruits", async (req, res) => {
   try {
-    const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
-    let data;
+    const refresh = req.query.refresh === 'true';
     
-    try {
-      const jsonData = await fs.readFile(dataPath, 'utf-8');
-      data = JSON.parse(jsonData);
-    } catch (err) {
-      console.warn('Data file not found, using initial data');
-      data = getInitialData();
+    if (refresh) {
+      console.log('Refreshing data...');
+      await runScraper();
     }
+
+    const data = await fs.readFile('data/bloxfruits.json', 'utf-8');
+    const jsonData = JSON.parse(data);
     
+    // Apply filters if any
     const { rarity, type, value_type } = req.query;
-    
     if (rarity || type || value_type) {
-      data.items = data.items.filter(item => {
+      jsonData.items = jsonData.items.filter(item => {
         let match = true;
-        if (rarity) {
-          match = match && item.rarity.toLowerCase() === rarity.toLowerCase();
-        }
-        if (type) {
-          match = match && item.type.toLowerCase() === type.toLowerCase();
-        }
-        if (value_type && item.values[value_type]) {
-          match = match && true;
-        }
+        if (rarity) match = match && item.rarity.toLowerCase() === rarity.toLowerCase();
+        if (type) match = match && item.type.toLowerCase() === type.toLowerCase();
+        if (value_type) match = match && item.values[value_type];
         return match;
       });
     }
     
-    res.json(data);
+    res.json(jsonData);
   } catch (error) {
-    console.error('Blox Fruits API Error:', error);
-    res.status(500).json({ error: "Failed to fetch Blox Fruits data" });
+    console.error('API Error:', error);
+    res.status(500).json({ error: "Failed to fetch data" });
   }
 });
 
-// Get available filters
-app.get("/api/bloxfruits/filters", async (req, res) => {
+// Endpoint to force refresh
+app.post("/api/bloxfruits/refresh", async (req, res) => {
   try {
-    const dataPath = path.join(__dirname, 'data', 'bloxfruits.json');
-    let data;
-    
-    try {
-      const jsonData = await fs.readFile(dataPath, 'utf-8');
-      data = JSON.parse(jsonData);
-    } catch (err) {
-      console.warn('Data file not found, using initial data');
-      data = getInitialData();
-    }
-    
-    const filters = {
-      rarities: [...new Set(data.items.map(item => item.rarity))],
-      types: [...new Set(data.items.map(item => item.type))],
-      value_types: ["physical", "permanent"]
-    };
-    
-    res.json(filters);
+    await runScraper();
+    res.json({ message: "Data refresh completed" });
   } catch (error) {
-    console.error('Error fetching filters:', error.message);
-    res.status(500).json({ error: "Failed to fetch filters" });
+    console.error('Refresh Error:', error);
+    res.status(500).json({ error: "Failed to refresh data" });
   }
 });
 
